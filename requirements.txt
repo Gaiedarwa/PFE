@@ -1,0 +1,11 @@
+keybert
+sentence-transformers
+scikit-learn
+numpy
+pdfplumber
+pytesseract
+Flask
+flask-cors
+python-dotenv
+PyMuPDF
+pymongo
