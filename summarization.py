@@ -7,17 +7,7 @@ nltk.download('stopwords')
 
 
 
-# Fonction pour extraire les mots-clés d'un texte
-def extract_keywords(text, max_words=10):
-    stop_words_fr = set(stopwords.words('french'))
-    
-    vectorizer = TfidfVectorizer(stop_words=list(stop_words_fr), ngram_range=(1, 2), max_features=50)
-    tfidf_matrix = vectorizer.fit_transform([text])
-    
-    feature_names = vectorizer.get_feature_names_out()
-    tfidf_sorting = tfidf_matrix.sum(axis=0).A1.argsort()[::-1]
-    
-    return [feature_names[i] for i in tfidf_sorting[:max_words]]
+   
 
 
 def extract_skills(text):
@@ -29,9 +19,7 @@ def extract_skills(text):
     
     return extracted_skills
 # summarization.py
-import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize, sent_tokenize
+
 import re
 
 nltk.download('punkt')
@@ -60,19 +48,29 @@ def extract_skills_with_llama(text):
     
     except Exception as e:
         return f"Erreur lors de l'extraction des compétences: {str(e)}"
+import ollama
+from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+def extract_keywords(text, lang='fr', max_words=15):
+    stop_words = stopwords.words('french' if lang == 'fr' else 'english')
+    vectorizer = TfidfVectorizer(
+        ngram_range=(1, 2),
+        stop_words=stop_words,
+        max_features=max_words
+    )
+    vectorizer.fit_transform([text])
+    return vectorizer.get_feature_names_out().tolist()
 
 def summarize_concisely(text):
     try:
-        # Extraction des compétences techniques avec LLaMA
-        skills = extract_skills_with_llama(text)
-        
-        # Génération du résumé
-        if skills:
-            summary = f"Compétences clés : {', '.join(skills[:10])}"  # Limite à 10 compétences
-        else:
-            summary = "Compétences clés : Aucune compétence technique détectée."
-        
-        return summary
-    
+        response = ollama.chat(
+            model="llama3.2:latest",
+            messages=[{
+                "role": "user",
+                "content": f"Résumez ce texte en 3 points clés : {text[:3000]}"
+            }]
+        )
+        return response['message']['content']
     except Exception as e:
-        return f"Erreur lors de la génération du résumé: {str(e)}"
+        return f"Erreur de génération : {str(e)}"

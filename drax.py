@@ -4,12 +4,13 @@ from flask_cors import CORS
 import os
 from database import connect_mongo
 from routes import init_routes
+from json_encoder import CustomJSONEncoder
 
 # Création de l'application Flask
 def create_app():
     app = Flask(__name__)
     CORS(app)
-
+    app.json_encoder = CustomJSONEncoder
     # Configuration du dossier d'upload
     UPLOAD_FOLDER = "uploads"
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)

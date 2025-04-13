@@ -1,10 +1,10 @@
+from bson import ObjectId
 from flask import request, jsonify
 from services import process_document, clean_text
-from models import extract_entities, validate_personal_info
-from models import calculate_similarity
+from models import extract_entities, validate_personal_info, calculate_similarity
 from summarization import summarize_concisely, extract_keywords
-from database import cv_collection
 from technical_test import generate_tests, select_random_test, get_user_input
+from database import cv_collection
 import re
 
 # Vérification de la taille du fichier

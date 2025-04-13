@@ -1,43 +1,39 @@
 import re
 from sentence_transformers import SentenceTransformer, util
 from functools import lru_cache
+import ollama
 
-# Chargement du modèle SentenceTransformer avec cache pour optimiser les performances
 @lru_cache(maxsize=1)
 def get_model():
     return SentenceTransformer('all-MiniLM-L6-v2')
 
-# models.py
 def extract_entities(text):
-    email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
-    phone_pattern = r'\+?\d{1,4}[-.\s]?(?:\(\d+\)[-.\s]?)?\d{3}[-.\s]?\d{4}'
-    phone_match = re.search(phone_pattern, text)
-    phone = phone_match.group() if phone_match else ''
-    name_pattern = r'(?i)\b(?:[A-ZÀ-ÂÇÉÈÊËÎÏÔÙÛÜ][a-zà-âçéèêëîïôùûü]+\b[\s-]*){2,}'
-
-    # Recherche dans tout le texte
-    email_match = re.search(email_pattern, text)
-   
-    name_match = re.findall(name_pattern, text)  # Trouve toutes les occurrences
-
-    # Prend le premier nom trouvé
-    name = name_match[0].strip() if name_match else ''
-
-    return {
-        'nom': name,
-        'email': email_match.group().lower() if email_match else '',
-        'téléphone': phone
+    patterns = {
+        'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b',
+        'téléphone': r'\+?\d{1,4}[-.\s]?(?:\(\d+\)[-.\s]?)?\d{3}[-.\s]?\d{4}',
+        'nom': r'(?i)\b(?:[A-ZÀ-ÂÇÉÈÊËÎÏÔÙÛÜ][a-zà-âçéèêëîïôùûü]+\b[\s-]*){2,}'
     }
+    
+    entities = {}
+    for key, pattern in patterns.items():
+        match = re.search(pattern, text)
+        if match:
+            entities[key] = match.group().strip()
+    
+    return entities
 
-# Calcul de la similarité entre le CV et l'offre d'emploi
-def calculate_similarity(text1: str, text2: str) -> float:
+def mask_sensitive_info(text, entities):
+    for value in entities.values():
+        if value:
+            text = text.replace(value, '[REDACTED]')
+    return text
+
+def calculate_similarity(text1, text2):
     model = get_model()
-    emb1 = model.encode(text1[:1000], convert_to_tensor=True)  # Limite la taille du texte
-    emb2 = model.encode(text2[:1000], convert_to_tensor=True)
-    score = util.cos_sim(emb1, emb2).item()
-    return round(score * 100, 2)
+    embedding1 = model.encode(text1, convert_to_tensor=True)
+    embedding2 = model.encode(text2, convert_to_tensor=True)
+    return round(util.cos_sim(embedding1, embedding2).item() * 100, 2)
 
-# Validation des informations personnelles (nom et email obligatoires)
 def validate_personal_info(info):
-    if not info.get("nom") or not info.get("email"):
-        raise ValueError("Le champ 'nom' ou 'email' est vide.")
+    if not info.get('email'):
+        raise ValueError("L'email est requis")
