@@ -1,7 +1,6 @@
 import re
 from sentence_transformers import SentenceTransformer, util
 from functools import lru_cache
-import ollama
 
 @lru_cache(maxsize=1)
 def get_model():
@@ -13,20 +12,12 @@ def extract_entities(text):
         'téléphone': r'\+?\d{1,4}[-.\s]?(?:\(\d+\)[-.\s]?)?\d{3}[-.\s]?\d{4}',
         'nom': r'(?i)\b(?:[A-ZÀ-ÂÇÉÈÊËÎÏÔÙÛÜ][a-zà-âçéèêëîïôùûü]+\b[\s-]*){2,}'
     }
-    
     entities = {}
     for key, pattern in patterns.items():
         match = re.search(pattern, text)
         if match:
             entities[key] = match.group().strip()
-    
     return entities
-
-def mask_sensitive_info(text, entities):
-    for value in entities.values():
-        if value:
-            text = text.replace(value, '[REDACTED]')
-    return text
 
 def calculate_similarity(text1, text2):
     model = get_model()

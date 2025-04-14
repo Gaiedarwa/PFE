@@ -24,10 +24,26 @@ def extract_text_from_image(file):
     image = Image.open(io.BytesIO(file.read()))
     return clean_text(pytesseract.image_to_string(image, lang="fra"))
 
-# Fonction de traitement du document (PDF ou image)
+import pytesseract
+import fitz
+from PIL import Image
+import io
+import tempfile
+
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
 def process_document(file):
+    if not file:
+        return ""
+    
     if file.filename.lower().endswith('.pdf'):
-        return extract_text_from_pdf(file)
-    elif file.filename.lower().endswith(('.jpg', '.jpeg', '.png')):
-        return extract_text_from_image(file)
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            file.save(tmp.name)
+            with fitz.open(tmp.name) as doc:
+                return " ".join([page.get_text() for page in doc])
+    
+    elif file.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+        image = Image.open(io.BytesIO(file.read()))
+        return pytesseract.image_to_string(image, lang='fra+eng')
+    
     return ""

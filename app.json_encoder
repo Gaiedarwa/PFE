@@ -1,0 +1,8 @@
+from flask.json.provider import DefaultJSONProvider
+
+class CustomJSONProvider(DefaultJSONProvider):
+    def default(self, obj):
+        try:
+            return super().default(obj)
+        except TypeError:
+            return str(obj)  # Exemple simple, à adapter selon ton besoin
