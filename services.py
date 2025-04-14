@@ -8,11 +8,9 @@ import re
 pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 
 # Fonction pour nettoyer le texte
-# services.py
 def clean_text(text):
     text = re.sub(r'\s+', ' ', text).strip()
-    return text  # Supprime uniquement les espaces superflus
-
+    return text
 
 # Fonction pour extraire du texte d'un fichier PDF
 def extract_text_from_pdf(file):
@@ -47,3 +45,8 @@ def process_document(file):
         return pytesseract.image_to_string(image, lang='fra+eng')
     
     return ""
+def remove_sensitive_data(text: str) -> str:
+    text = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}', '[EMAIL]', text)
+    text = re.sub(r'\b\d{2,4}[-.\s]??\d{2,4}[-.\s]??\d{2,4}', '[PHONE]', text)
+    text = re.sub(r'\b[A-Z][a-z]+(?:\s[A-Z][a-z]+)+\b', '[NAME]', text)
+    return text
